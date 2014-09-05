@@ -74,12 +74,15 @@ bool handler(PDU &pdu) {
       fprintf(stdout, "0x%04x:", i);
 
     uint8_t byte = vec.at(i);
-    fprintf(stdout, " %02x", byte);
+    if (i % 2 == 0)
+      fprintf(stdout, " %02x", byte);
+    else
+      fprintf(stdout, "%02x", byte);
 
     if (i % 16 == 15)
       fprintf(stdout, "\n");
   }
-  if (i % 16 != 15)
+  if (i % 16 != 0)
     fprintf(stdout, "\n");
 
   return true;
