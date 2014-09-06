@@ -1,11 +1,18 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <tins/tins.h>
 
 using namespace Tins;
 
-static void run(const char* iface, const char* key, const char* ssid);
+struct tinsdump_args_t {
+  const char* iface;
+  const char* key;
+  const char* ssid;
+};
+
+static void run(tinsdump_args_t* args);
 
 
 static void usage(int argc, char** argv) {
@@ -26,21 +33,20 @@ int main(int argc, char** argv) {
     { "help", no_argument, NULL, 'h' },
     { NULL, 0, NULL, 0 }
   };
+  tinsdump_args_t args;
 
   char ch;
-  const char* iface = NULL;
-  const char* key = NULL;
-  const char* ssid = NULL;
+  memset(&args, 0, sizeof(args));
   while ((ch = getopt_long(argc, argv, "i:k:s:h", opts, NULL)) != -1) {
     switch (ch) {
       case 'i':
-        iface = optarg;
+        args.iface = optarg;
         break;
       case 'k':
-        key = optarg;
+        args.key = optarg;
         break;
       case 's':
-        ssid = optarg;
+        args.ssid = optarg;
         break;
       case 'h':
       default:
@@ -49,18 +55,18 @@ int main(int argc, char** argv) {
     }
   }
 
-  if (iface == NULL || key == NULL || ssid == NULL) {
+  if (args.iface == NULL || args.key == NULL || args.ssid == NULL) {
     usage(argc, argv);
     return -1;
   }
 
-  run(iface, key, ssid);
+  run(&args);
 
   return 0;
 }
 
 
-bool handler(PDU &pdu) {
+static bool pdu_handler(PDU &pdu) {
   IP &ip = pdu.rfind_pdu<IP>();
   fprintf(stdout,
           "IP packet from %s to %s:\n",
@@ -89,14 +95,15 @@ bool handler(PDU &pdu) {
 }
 
 
-void run(const char* iface, const char* key, const char* ssid) {
+void run(tinsdump_args_t* args) {
   SnifferConfiguration config;
   config.set_promisc_mode(true);
   config.set_rfmon(true);
 
-  auto decrypt_proxy = Crypto::make_wpa2_decrypter_proxy(&handler);
-  decrypt_proxy.decrypter().add_ap_data(key, ssid);
+  Crypto::DecrypterProxy<bool (*)(PDU&), Crypto::WPA2Decrypter> decrypt_proxy =
+      Crypto::make_wpa2_decrypter_proxy(&pdu_handler);
+  decrypt_proxy.decrypter().add_ap_data(args->key, args->ssid);
 
-  Sniffer sniffer(iface, config);
+  Sniffer sniffer(args->iface, config);
   sniffer.sniff_loop(decrypt_proxy);
 }
