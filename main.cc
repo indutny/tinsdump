@@ -68,6 +68,7 @@ int main(int argc, char** argv) {
 
 static bool pdu_handler(PDU &pdu) {
   IP &ip = pdu.rfind_pdu<IP>();
+
   fprintf(stdout,
           "IP packet from %s to %s:\n",
           ip.src_addr().to_string().c_str(),
@@ -90,6 +91,7 @@ static bool pdu_handler(PDU &pdu) {
   }
   if (i % 16 != 0)
     fprintf(stdout, "\n");
+  fflush(stdout);
 
   return true;
 }
