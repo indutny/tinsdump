@@ -101,6 +101,8 @@ void run(tinsdump_args_t* args) {
   SnifferConfiguration config;
   config.set_promisc_mode(true);
   config.set_rfmon(true);
+  config.set_buffer_size(100 * 1024 * 1024);
+  config.set_timeout(50);
 
   Crypto::DecrypterProxy<bool (*)(PDU&), Crypto::WPA2Decrypter> decrypt_proxy =
       Crypto::make_wpa2_decrypter_proxy(&pdu_handler);
